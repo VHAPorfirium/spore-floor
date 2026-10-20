@@ -1,0 +1,11 @@
+{
+  "name": "spore-floor",
+  "version": "0.1.0",
+  "description": "Horror Hatch #5 entry: spot the spore anomalies or stay in the loop forever.",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "npx --yes http-server . -p 8080 -c-1 -o",
+    "test": "node --test"
+  }
+}

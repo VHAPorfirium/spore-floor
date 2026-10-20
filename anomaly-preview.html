@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<!--
+  Ferramenta de desenvolvimento: mostra uma anomalia específica sem precisar jogar até ela aparecer.
+  Exemplo: anomaly-preview.html?anomaly=mold-patch-on-wall&cameraPositionX=1570
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Anomaly preview</title>
+  <style>html, body { margin: 0; height: 100%; background: #000000; display: flex; align-items: center; justify-content: center; }</style>
+</head>
+<body>
+  <canvas id="game-canvas"></canvas>
+  <script type="module">
+    import { GameConfiguration } from "./src/domain/GameConfiguration.js";
+    import { FloorGenerator } from "./src/domain/FloorGenerator.js";
+    import { createAnomalyCatalog } from "./src/domain/anomalies/anomalyCatalog.js";
+    import { GameSession } from "./src/application/GameSession.js";
+    import { CanvasHallwayRenderer } from "./src/infrastructure/CanvasHallwayRenderer.js";
+
+    const previewFloorNumber = 7;
+    const urlParameters = new URLSearchParams(window.location.search);
+    const requestedAnomalyIdentifier = urlParameters.get("anomaly");
+    const requestedCameraPositionX = Number(urlParameters.get("cameraPositionX") ?? 1200);
+
+    const anomalyToPreview = createAnomalyCatalog().find(
+      (anomaly) => anomaly.anomalyIdentifier === requestedAnomalyIdentifier,
+    );
+    const anomaliesToUse = anomalyToPreview ? [anomalyToPreview] : [];
+    const alwaysPickFirstAnomaly = () => 0;
+
+    const floorGenerator = new FloorGenerator(anomaliesToUse, 1, GameConfiguration.startingFloorNumber, alwaysPickFirstAnomaly);
+    const gameSession = new GameSession(GameConfiguration, floorGenerator);
+    gameSession.currentFloorState = floorGenerator.generateFloor(previewFloorNumber);
+    gameSession.player.teleportTo(requestedCameraPositionX);
+
+    const canvasHallwayRenderer = new CanvasHallwayRenderer(document.getElementById("game-canvas"), GameConfiguration, true);
+    canvasHallwayRenderer.render(gameSession, 0);
+  </script>
+</body>
+</html>
