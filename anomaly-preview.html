@@ -1,7 +1,9 @@
 <!DOCTYPE html>
 <!--
   Ferramenta de desenvolvimento: mostra uma anomalia específica sem precisar jogar até ela aparecer.
-  Exemplo: anomaly-preview.html?anomaly=mold-patch-on-wall&cameraPositionX=1570
+  Exemplo: anomaly-preview.html?anomaly=mold-patch-on-wall
+  A câmera centraliza sozinha na anomalia. Para forçar outra posição: &cameraPositionX=1570
+  Sem o parâmetro anomaly, mostra o corredor normal e lista as anomalias no console.
 -->
 <html lang="en">
 <head>
@@ -19,23 +21,37 @@
     import { CanvasHallwayRenderer } from "./src/infrastructure/CanvasHallwayRenderer.js";
 
     const previewFloorNumber = 7;
+    const defaultCameraPositionX = 1200;
+    // O jogador fica um pouco à esquerda para não tapar a anomalia; a câmera segue o jogador.
+    const playerDistanceLeftOfFocusInPixels = 180;
     const urlParameters = new URLSearchParams(window.location.search);
     const requestedAnomalyIdentifier = urlParameters.get("anomaly");
-    const requestedCameraPositionX = Number(urlParameters.get("cameraPositionX") ?? 1200);
 
-    const anomalyToPreview = createAnomalyCatalog().find(
-      (anomaly) => anomaly.anomalyIdentifier === requestedAnomalyIdentifier,
-    );
+    const anomalyCatalog = createAnomalyCatalog();
+    const anomalyToPreview = anomalyCatalog.find((anomaly) => anomaly.anomalyIdentifier === requestedAnomalyIdentifier);
+    if (!anomalyToPreview) {
+      console.info("Available anomalies:", anomalyCatalog.map((anomaly) => anomaly.anomalyIdentifier));
+    }
+
+    const requestedCameraPositionX = urlParameters.has("cameraPositionX")
+      ? Number(urlParameters.get("cameraPositionX"))
+      : anomalyToPreview?.focusPositionX ?? defaultCameraPositionX;
+
     const anomaliesToUse = anomalyToPreview ? [anomalyToPreview] : [];
     const alwaysPickFirstAnomaly = () => 0;
-
     const floorGenerator = new FloorGenerator(anomaliesToUse, 1, GameConfiguration.startingFloorNumber, alwaysPickFirstAnomaly);
     const gameSession = new GameSession(GameConfiguration, floorGenerator);
     gameSession.currentFloorState = floorGenerator.generateFloor(previewFloorNumber);
-    gameSession.player.teleportTo(requestedCameraPositionX);
+    gameSession.player.teleportTo(requestedCameraPositionX - playerDistanceLeftOfFocusInPixels);
 
     const canvasHallwayRenderer = new CanvasHallwayRenderer(document.getElementById("game-canvas"), GameConfiguration, true);
-    canvasHallwayRenderer.render(gameSession, 0);
+
+    // Continua desenhando para as anomalias animadas (luz piscando, esporos) aparecerem.
+    function renderPreviewFrame(currentFrameTimestampInMilliseconds) {
+      canvasHallwayRenderer.render(gameSession, currentFrameTimestampInMilliseconds / 1000);
+      requestAnimationFrame(renderPreviewFrame);
+    }
+    requestAnimationFrame(renderPreviewFrame);
   </script>
 </body>
 </html>

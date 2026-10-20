@@ -41,11 +41,30 @@ Instale a extensão **Live Server**, clique com o botão direito no `index.html`
 
 Abra `http://localhost:8080/?debug` para ver no canto da tela qual anomalia está ativa no andar. Útil para testar.
 
-Para ver uma anomalia específica sem precisar jogar até ela aparecer:
+Para ver uma anomalia específica sem precisar jogar até ela aparecer (a câmera centraliza sozinha nela):
 
 ```
-http://localhost:8080/anomaly-preview.html?anomaly=mold-patch-on-wall&cameraPositionX=1570
+http://localhost:8080/anomaly-preview.html?anomaly=mold-patch-on-wall
 ```
+
+Para forçar outra posição de câmera, acrescente `&cameraPositionX=1570`. Sem o parâmetro `anomaly`, a página mostra o corredor normal e lista no console os identificadores disponíveis.
+
+## Anomalias
+
+| Identificador | O que muda |
+|---|---|
+| `swapped-door-numbers` | Dois números de porta trocam de lugar |
+| `upside-down-painting` | Um quadro está de cabeça para baixo |
+| `changed-exit-sign-text` | A placa diz STAY em vez de EXIT |
+| `elevator-indicator-shows-wrong-floor` | O painel do elevador mostra o andar de cima |
+| `missing-apartment-door` | Uma das portas sumiu |
+| `painting-sun-missing` | O sol sumiu de um quadro |
+| `mold-patch-on-wall` | Mancha pequena de mofo perto do rodapé |
+| `fungus-covering-door-number` | Fungo cobrindo o número de uma porta |
+| `lamp-flickering-out-of-rhythm` | Uma lâmpada pisca fora do ritmo das outras |
+| `spores-drifting-upward` | Os esporos no ar sobem em vez de cair |
+| `footsteps-behind-player` | Uma segunda sombra segue o jogador (o som de passos entra com o áudio) |
+| `infected-figure-at-hallway-end` | Uma figura infectada parada perto da escada |
 
 ## Testes
 
@@ -67,7 +86,9 @@ src/
   application/
     GameSession.js     Orquestra o jogo: andar, decidir, trocar de andar
   infrastructure/      Detalhes técnicos do navegador
-    CanvasHallwayRenderer.js
+    CanvasHallwayRenderer.js   Ordem das camadas e câmera
+    drawers/                   Um desenhista por elemento (porta, quadro, lâmpada, esporos...)
+    ceilingLampBrightness.js   Brilho de cada lâmpada ao longo do tempo
     KeyboardInputReader.js
   main.js              Monta as peças e inicia o loop do jogo
 tests/                 Testes das regras
@@ -81,20 +102,25 @@ A camada `domain` não conhece o navegador, por isso dá para testar com `node -
 
 ```js
 import { Anomaly } from "./Anomaly.js";
+import { apartmentDoorPositionsX } from "../HallwayLayout.js";
 
-export class MissingDoorAnomaly extends Anomaly {
+const missingDoorIndex = 2;
+
+export class MissingApartmentDoorAnomaly extends Anomaly {
   constructor() {
-    super("missing-door", "One of the doors is gone");
+    super("missing-apartment-door", "One of the apartment doors is gone", apartmentDoorPositionsX[missingDoorIndex]);
   }
 
   applyToHallwayLayout(hallwayLayout) {
-    hallwayLayout.doors.splice(2, 1);
+    hallwayLayout.doors = hallwayLayout.doors.filter((door, doorIndex) => doorIndex !== missingDoorIndex);
   }
 }
 ```
 
+O terceiro parâmetro (`focusPositionX`) é onde a anomalia aparece no corredor; o preview usa para centralizar a câmera.
+
 2. Registre em `src/domain/anomalies/anomalyCatalog.js`.
-3. Se a anomalia precisar de algo novo na tela, desenhe no `CanvasHallwayRenderer.js`.
+3. Se a anomalia precisar de algo novo na tela, adicione o dado em `HallwayLayout.js` e desenhe no desenhista correspondente em `src/infrastructure/drawers/`. Anomalias animadas (como a lâmpada piscando) só marcam um dado; quem anima com o tempo é o desenhista.
 
 O teste `every anomaly actually changes the hallway` garante que toda anomalia registrada realmente muda alguma coisa no corredor.
 

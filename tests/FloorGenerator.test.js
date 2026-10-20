@@ -31,3 +31,16 @@ test("every anomaly actually changes the hallway", () => {
     assert.notEqual(changedLayoutAsText, normalLayoutAsText, `${anomaly.anomalyIdentifier} changed nothing`);
   });
 });
+
+test("the same anomaly is never chosen on two floors in a row", () => {
+  const [firstAnomaly, secondAnomaly] = createAnomalyCatalog();
+  const floorGenerator = new FloorGenerator([firstAnomaly, secondAnomaly], 1, 10, alwaysReturnZero);
+  const firstFloorAnomaly = floorGenerator.generateFloor(9).activeAnomaly;
+  const secondFloorAnomaly = floorGenerator.generateFloor(8).activeAnomaly;
+  assert.notEqual(firstFloorAnomaly, secondFloorAnomaly);
+});
+
+test("an empty anomaly catalog always generates normal floors", () => {
+  const floorGenerator = new FloorGenerator([], 1, 10, alwaysReturnZero);
+  assert.equal(floorGenerator.generateFloor(8).hasAnomaly, false);
+});

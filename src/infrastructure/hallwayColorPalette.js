@@ -15,6 +15,7 @@ export const hallwayColorPalette = Object.freeze({
   paintingSun: "#e4c46a",
   sporeMoldDark: "#56612a",
   sporeMoldLight: "#a7b45a",
+  sporeParticle: "#d8ddb0",
   fluorescentTube: "#eef0d2",
   elevatorSteel: "#8d969a",
   elevatorSteelShadow: "#5e6669",
@@ -24,6 +25,9 @@ export const hallwayColorPalette = Object.freeze({
   exitSignBackground: "#10140f",
   exitSignText: "#5ccf72",
   playerSilhouette: "#121210",
+  castShadow: "rgba(0, 0, 0, 0.6)",
+  infectedFigureSilhouette: "#0a0a08",
   interfaceText: "#e9e6d6",
   interfaceTextDimmed: "#a6a28f",
+  debugText: "#ff6b6b",
 });

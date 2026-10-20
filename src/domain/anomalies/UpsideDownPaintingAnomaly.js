@@ -1,12 +1,14 @@
 import { Anomaly } from "./Anomaly.js";
+import { paintingPositionsX } from "../HallwayLayout.js";
+
+const upsideDownPaintingIndex = 1;
 
 export class UpsideDownPaintingAnomaly extends Anomaly {
   constructor() {
-    super("upside-down-painting", "A painting is hanging upside down");
+    super("upside-down-painting", "A painting is hanging upside down", paintingPositionsX[upsideDownPaintingIndex]);
   }
 
   applyToHallwayLayout(hallwayLayout) {
-    const middlePainting = hallwayLayout.paintings[1];
-    middlePainting.isUpsideDown = true;
+    hallwayLayout.paintings[upsideDownPaintingIndex].isUpsideDown = true;
   }
 }
