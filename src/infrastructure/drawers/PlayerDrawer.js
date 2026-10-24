@@ -1,14 +1,15 @@
 import { hallwayColorPalette as colors } from "../hallwayColorPalette.js";
 import { floorTopY } from "../hallwayRenderingMeasurements.js";
 
-const legSwingSpeed = 10;
 const legSwingAmountInPixels = 7;
 const shadowHorizontalRadius = 22;
 const shadowVerticalRadius = 5;
 
 export class PlayerDrawer {
-  constructor(drawingContext) {
+  constructor(drawingContext, playerStepDurationInSeconds) {
     this.drawingContext = drawingContext;
+    // Cada meia volta do seno é um passo: assim as pernas batem no chão junto com o som dos passos.
+    this.legSwingSpeed = Math.PI / playerStepDurationInSeconds;
   }
 
   draw(player) {
@@ -26,7 +27,7 @@ export class PlayerDrawer {
 
   drawBody(player) {
     const context = this.drawingContext;
-    const legSwingAmount = player.isWalking ? Math.sin(player.walkingAnimationTimeInSeconds * legSwingSpeed) * legSwingAmountInPixels : 0;
+    const legSwingAmount = player.isWalking ? Math.sin(player.walkingAnimationTimeInSeconds * this.legSwingSpeed) * legSwingAmountInPixels : 0;
     const facingDirection = player.isFacingRight ? 1 : -1;
 
     context.fillStyle = colors.playerSilhouette;

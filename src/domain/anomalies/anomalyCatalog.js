@@ -6,7 +6,8 @@ import { FungusCoveringDoorNumberAnomaly } from "./FungusCoveringDoorNumberAnoma
 import { LampFlickeringOutOfRhythmAnomaly } from "./LampFlickeringOutOfRhythmAnomaly.js";
 import { SporesDriftingUpwardAnomaly } from "./SporesDriftingUpwardAnomaly.js";
 import { FootstepsBehindPlayerAnomaly } from "./FootstepsBehindPlayerAnomaly.js";
-import { ElevatorIndicatorShowsWrongFloorAnomaly } from "./ElevatorIndicatorShowsWrongFloorAnomaly.js";
+import { ElevatorIndicatorGlowsGreenAnomaly } from "./ElevatorIndicatorGlowsGreenAnomaly.js";
+import { ElevatorChimeOutOfTuneAnomaly } from "./ElevatorChimeOutOfTuneAnomaly.js";
 import { MissingApartmentDoorAnomaly } from "./MissingApartmentDoorAnomaly.js";
 import { PaintingSunMissingAnomaly } from "./PaintingSunMissingAnomaly.js";
 import { InfectedFigureAtHallwayEndAnomaly } from "./InfectedFigureAtHallwayEndAnomaly.js";
@@ -18,7 +19,7 @@ export function createAnomalyCatalog() {
     new SwappedDoorNumbersAnomaly(),
     new UpsideDownPaintingAnomaly(),
     new ChangedExitSignTextAnomaly(),
-    new ElevatorIndicatorShowsWrongFloorAnomaly(),
+    new ElevatorIndicatorGlowsGreenAnomaly(),
     new MissingApartmentDoorAnomaly(),
     new PaintingSunMissingAnomaly(),
     // Ligadas à infecção por esporos
@@ -28,5 +29,7 @@ export function createAnomalyCatalog() {
     new SporesDriftingUpwardAnomaly(),
     new FootstepsBehindPlayerAnomaly(),
     new InfectedFigureAtHallwayEndAnomaly(),
+    // Só de áudio
+    new ElevatorChimeOutOfTuneAnomaly(),
   ];
 }

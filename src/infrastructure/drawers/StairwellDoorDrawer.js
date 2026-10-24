@@ -14,7 +14,7 @@ export class StairwellDoorDrawer {
     this.stairwellDoorCenterX = stairwellDoorCenterX;
   }
 
-  draw(exitSignText) {
+  draw() {
     const context = this.drawingContext;
     const doorCenterX = this.stairwellDoorCenterX;
     const doorLeftX = doorCenterX - doorWidth / 2;
@@ -26,11 +26,11 @@ export class StairwellDoorDrawer {
     context.fillRect(doorLeftX, doorTopY, doorWidth, doorHeight);
     context.fillStyle = colors.elevatorSteel;
     context.fillRect(doorLeftX + 8, doorTopY + 92, doorWidth - 16, 8);
-
-    this.drawExitSign(doorTopY - exitSignDistanceAboveDoor, exitSignText);
   }
 
-  drawExitSign(exitSignTopY, exitSignText) {
+  /** A placa tem luz própria: é desenhada depois da escuridão, para não ser apagada por ela. */
+  drawGlowingExitSign(exitSignText) {
+    const exitSignTopY = floorTopY - doorHeight - exitSignDistanceAboveDoor;
     const context = this.drawingContext;
     context.fillStyle = colors.exitSignBackground;
     context.fillRect(this.stairwellDoorCenterX - exitSignWidth / 2, exitSignTopY, exitSignWidth, exitSignHeight);

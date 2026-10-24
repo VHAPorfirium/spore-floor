@@ -1,10 +1,11 @@
 import { GamePhase } from "./GamePhase.js";
-import { PlayerDecision } from "../domain/PlayerDecision.js";
 import { Player } from "../domain/Player.js";
+import { PlayerDecision } from "../domain/PlayerDecision.js";
 import { isPlayerDecisionCorrect, calculateNextFloorNumber, hasPlayerEscaped } from "../domain/LoopRules.js";
 
 const distanceBetweenElevatorAndPlayerSpawnInPixels = 110;
 
+/** Orquestra uma partida: tela de título, corredor, notas, troca de andar e fuga. */
 export class GameSession {
   constructor(gameConfiguration, floorGenerator) {
     this.gameConfiguration = gameConfiguration;
@@ -17,30 +18,52 @@ export class GameSession {
       gameConfiguration.stairwellDoorPositionX + 40,
     );
 
-    this.startNewRun();
+    this.prepareFreshRun();
+    this.currentGamePhase = GamePhase.showingTitleScreen;
   }
 
   startNewRun() {
+    this.prepareFreshRun();
+    this.currentGamePhase = GamePhase.exploringHallway;
+  }
+
+  prepareFreshRun() {
     this.currentFloorState = this.floorGenerator.generateFloor(this.gameConfiguration.startingFloorNumber);
     this.player.teleportTo(this.playerSpawnPositionX);
-    this.currentGamePhase = GamePhase.exploringHallway;
     this.floorTransitionMessage = "";
     this.remainingFloorTransitionSeconds = 0;
     this.pendingNextFloorNumber = null;
+    this.lastPlayerDecision = null;
+    this.wasLastDecisionCorrect = null;
+    this.elapsedRunTimeInSeconds = 0;
+    this.numberOfTimesSentBackToStartingFloor = 0;
   }
 
   update(playerInputState, elapsedSecondsSinceLastFrame) {
-    if (this.currentGamePhase === GamePhase.exploringHallway) {
-      this.updateHallwayExploration(playerInputState, elapsedSecondsSinceLastFrame);
-      return;
+    switch (this.currentGamePhase) {
+      case GamePhase.showingTitleScreen:
+        this.updateTitleScreen(playerInputState);
+        return;
+      case GamePhase.exploringHallway:
+        this.elapsedRunTimeInSeconds += elapsedSecondsSinceLastFrame;
+        this.updateHallwayExploration(playerInputState, elapsedSecondsSinceLastFrame);
+        return;
+      case GamePhase.readingMaintenanceNote:
+        this.elapsedRunTimeInSeconds += elapsedSecondsSinceLastFrame;
+        this.updateMaintenanceNoteReading(playerInputState);
+        return;
+      case GamePhase.changingFloor:
+        this.elapsedRunTimeInSeconds += elapsedSecondsSinceLastFrame;
+        this.updateFloorTransition(elapsedSecondsSinceLastFrame);
+        return;
+      case GamePhase.escapedTheLoop:
+        this.updateEscapeScreen(playerInputState);
+        return;
     }
+  }
 
-    if (this.currentGamePhase === GamePhase.changingFloor) {
-      this.updateFloorTransition(elapsedSecondsSinceLastFrame);
-      return;
-    }
-
-    if (this.currentGamePhase === GamePhase.escapedTheLoop && playerInputState.wasInteractKeyJustPressed) {
+  updateTitleScreen(playerInputState) {
+    if (playerInputState.wasInteractKeyJustPressed) {
       this.startNewRun();
     }
   }
@@ -52,9 +75,31 @@ export class GameSession {
       elapsedSecondsSinceLastFrame,
     );
 
+    if (!playerInputState.wasInteractKeyJustPressed) {
+      return;
+    }
+
     const availablePlayerDecision = this.findAvailablePlayerDecision();
-    if (playerInputState.wasInteractKeyJustPressed && availablePlayerDecision !== null) {
+    if (availablePlayerDecision !== null) {
       this.applyPlayerDecision(availablePlayerDecision);
+      return;
+    }
+
+    if (this.isPlayerNearMaintenanceNote()) {
+      this.player.stopWalking();
+      this.currentGamePhase = GamePhase.readingMaintenanceNote;
+    }
+  }
+
+  updateMaintenanceNoteReading(playerInputState) {
+    if (playerInputState.wasInteractKeyJustPressed) {
+      this.currentGamePhase = GamePhase.exploringHallway;
+    }
+  }
+
+  updateEscapeScreen(playerInputState) {
+    if (playerInputState.wasInteractKeyJustPressed) {
+      this.currentGamePhase = GamePhase.showingTitleScreen;
     }
   }
 
@@ -71,14 +116,29 @@ export class GameSession {
     return null;
   }
 
+  isPlayerNearMaintenanceNote() {
+    const maintenanceNote = this.currentFloorState.hallwayLayout.maintenanceNote;
+    if (maintenanceNote === null) {
+      return false;
+    }
+    return this.player.isNear(maintenanceNote.positionX, this.gameConfiguration.interactionDistanceInPixels);
+  }
+
   applyPlayerDecision(playerDecision) {
     const wasDecisionCorrect = isPlayerDecisionCorrect(this.currentFloorState, playerDecision);
+    this.lastPlayerDecision = playerDecision;
+    this.wasLastDecisionCorrect = wasDecisionCorrect;
+    if (!wasDecisionCorrect) {
+      this.numberOfTimesSentBackToStartingFloor += 1;
+    }
+
     this.pendingNextFloorNumber = calculateNextFloorNumber(
       this.currentFloorState.floorNumber,
       wasDecisionCorrect,
       this.gameConfiguration.startingFloorNumber,
     );
 
+    this.player.stopWalking();
     this.floorTransitionMessage = this.createFloorTransitionMessage(wasDecisionCorrect, this.pendingNextFloorNumber);
     this.remainingFloorTransitionSeconds = this.gameConfiguration.floorTransitionDurationInSeconds;
     this.currentGamePhase = GamePhase.changingFloor;

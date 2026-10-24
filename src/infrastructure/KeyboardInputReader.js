@@ -1,11 +1,14 @@
 const keysThatWalkLeft = ["ArrowLeft", "KeyA"];
 const keysThatWalkRight = ["ArrowRight", "KeyD"];
 const keysThatInteract = ["KeyE", "Space", "Enter"];
+const keysThatToggleMute = ["KeyM"];
+const allGameKeys = [...keysThatWalkLeft, ...keysThatWalkRight, ...keysThatInteract, ...keysThatToggleMute];
 
 export class KeyboardInputReader {
   constructor(eventTarget) {
     this.currentlyPressedKeyCodes = new Set();
     this.wasInteractKeyPressedSinceLastRead = false;
+    this.wasMuteKeyPressedSinceLastRead = false;
 
     eventTarget.addEventListener("keydown", (keyboardEvent) => this.handleKeyDown(keyboardEvent));
     eventTarget.addEventListener("keyup", (keyboardEvent) => this.handleKeyUp(keyboardEvent));
@@ -13,14 +16,16 @@ export class KeyboardInputReader {
   }
 
   handleKeyDown(keyboardEvent) {
-    const isGameKey = [...keysThatWalkLeft, ...keysThatWalkRight, ...keysThatInteract].includes(keyboardEvent.code);
-    if (isGameKey) {
+    if (allGameKeys.includes(keyboardEvent.code)) {
       keyboardEvent.preventDefault();
     }
 
-    const isFirstPressOfInteractKey = keysThatInteract.includes(keyboardEvent.code) && !keyboardEvent.repeat;
-    if (isFirstPressOfInteractKey) {
+    const isFirstPress = !keyboardEvent.repeat;
+    if (isFirstPress && keysThatInteract.includes(keyboardEvent.code)) {
       this.wasInteractKeyPressedSinceLastRead = true;
+    }
+    if (isFirstPress && keysThatToggleMute.includes(keyboardEvent.code)) {
+      this.wasMuteKeyPressedSinceLastRead = true;
     }
 
     this.currentlyPressedKeyCodes.add(keyboardEvent.code);
@@ -34,15 +39,19 @@ export class KeyboardInputReader {
     return keyCodes.some((keyCode) => this.currentlyPressedKeyCodes.has(keyCode));
   }
 
-  /** Lê o estado atual das teclas. O "acabou de apertar interagir" é consumido na leitura. */
+  /** Lê o estado atual das teclas. Os "acabou de apertar" são consumidos na leitura. */
   readPlayerInputState() {
     const isWalkingLeft = this.isAnyKeyPressed(keysThatWalkLeft);
     const isWalkingRight = this.isAnyKeyPressed(keysThatWalkRight);
     const walkingDirection = Number(isWalkingRight) - Number(isWalkingLeft);
 
-    const wasInteractKeyJustPressed = this.wasInteractKeyPressedSinceLastRead;
+    const playerInputState = {
+      walkingDirection,
+      wasInteractKeyJustPressed: this.wasInteractKeyPressedSinceLastRead,
+      wasMuteKeyJustPressed: this.wasMuteKeyPressedSinceLastRead,
+    };
     this.wasInteractKeyPressedSinceLastRead = false;
-
-    return { walkingDirection, wasInteractKeyJustPressed };
+    this.wasMuteKeyPressedSinceLastRead = false;
+    return playerInputState;
   }
 }

@@ -2,7 +2,7 @@ import { hallwayColorPalette as colors } from "../hallwayColorPalette.js";
 import { logicalScreenWidth, ceilingBottomY, floorTopY } from "../hallwayRenderingMeasurements.js";
 import { SporeDriftDirection } from "../../domain/SporeDriftDirection.js";
 
-const numberOfSporeParticles = 110;
+const maximumNumberOfSporeParticles = 130;
 const sporeFloatingAreaHeight = floorTopY - ceilingBottomY;
 const sporeParticleOpacity = 0.45;
 const sporeHorizontalSwayInPixels = 10;
@@ -22,7 +22,7 @@ function calculatePositiveRemainder(dividend, divisor) {
 export class AmbientSporesDrawer {
   constructor(drawingContext, hallwayLengthInPixels) {
     this.drawingContext = drawingContext;
-    this.sporeParticles = Array.from({ length: numberOfSporeParticles }, (unusedValue, particleIndex) => ({
+    this.sporeParticles = Array.from({ length: maximumNumberOfSporeParticles }, (unusedValue, particleIndex) => ({
       basePositionX: createDeterministicNumberBetweenZeroAndOne(particleIndex + 1) * hallwayLengthInPixels,
       baseOffsetY: createDeterministicNumberBetweenZeroAndOne(particleIndex + 101) * sporeFloatingAreaHeight,
       driftSpeedInPixelsPerSecond: 8 + createDeterministicNumberBetweenZeroAndOne(particleIndex + 201) * 14,
@@ -38,7 +38,8 @@ export class AmbientSporesDrawer {
     context.globalAlpha = sporeParticleOpacity;
     context.fillStyle = colors.sporeParticle;
 
-    this.sporeParticles.forEach((sporeParticle) => {
+    const visibleSporeParticles = this.sporeParticles.slice(0, ambientSpores.numberOfVisibleSpores);
+    visibleSporeParticles.forEach((sporeParticle) => {
       const positionX = sporeParticle.basePositionX
         + Math.sin(elapsedTimeInSeconds * sporeHorizontalSwaySpeed + sporeParticle.swayPhase) * sporeHorizontalSwayInPixels;
       const isOutsideTheScreen = positionX < cameraOffsetX - visibleMarginInPixels

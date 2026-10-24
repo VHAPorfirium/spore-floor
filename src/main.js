@@ -4,6 +4,7 @@ import { createAnomalyCatalog } from "./domain/anomalies/anomalyCatalog.js";
 import { GameSession } from "./application/GameSession.js";
 import { KeyboardInputReader } from "./infrastructure/KeyboardInputReader.js";
 import { CanvasHallwayRenderer } from "./infrastructure/CanvasHallwayRenderer.js";
+import { HallwayAudioDirector } from "./infrastructure/audio/HallwayAudioDirector.js";
 
 const maximumElapsedSecondsPerFrame = 0.05;
 
@@ -25,6 +26,11 @@ async function startGame() {
     GameConfiguration,
     isDebugModeEnabled,
   );
+  const hallwayAudioDirector = new HallwayAudioDirector(GameConfiguration);
+
+  // O navegador só deixa tocar som depois de uma interação do jogador.
+  window.addEventListener("keydown", () => hallwayAudioDirector.unlockAudio());
+  window.addEventListener("pointerdown", () => hallwayAudioDirector.unlockAudio());
 
   let previousFrameTimestampInMilliseconds = performance.now();
 
@@ -34,9 +40,16 @@ async function startGame() {
       (currentFrameTimestampInMilliseconds - previousFrameTimestampInMilliseconds) / 1000,
     );
     previousFrameTimestampInMilliseconds = currentFrameTimestampInMilliseconds;
+    const elapsedTimeInSeconds = currentFrameTimestampInMilliseconds / 1000;
 
-    gameSession.update(keyboardInputReader.readPlayerInputState(), elapsedSecondsSinceLastFrame);
-    canvasHallwayRenderer.render(gameSession, currentFrameTimestampInMilliseconds / 1000);
+    const playerInputState = keyboardInputReader.readPlayerInputState();
+    if (playerInputState.wasMuteKeyJustPressed) {
+      hallwayAudioDirector.toggleMute();
+    }
+
+    gameSession.update(playerInputState, elapsedSecondsSinceLastFrame);
+    hallwayAudioDirector.update(gameSession, elapsedTimeInSeconds);
+    canvasHallwayRenderer.render(gameSession, elapsedTimeInSeconds);
 
     requestAnimationFrame(runGameLoopFrame);
   }

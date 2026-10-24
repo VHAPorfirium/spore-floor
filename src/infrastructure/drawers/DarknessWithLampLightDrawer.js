@@ -1,7 +1,8 @@
 import { logicalScreenWidth, logicalScreenHeight, ceilingBottomY } from "../hallwayRenderingMeasurements.js";
 import { calculateCeilingLampBrightness } from "../ceilingLampBrightness.js";
 
-const darknessColor = "rgba(4, 5, 3, 0.86)";
+const darknessOpacityOnCleanFloor = 0.86;
+const extraDarknessOpacityAtFullInfection = 0.07;
 const lightInnerRadius = 10;
 const lightOuterRadius = 260;
 const lightCenterDistanceBelowCeiling = 120;
@@ -17,11 +18,12 @@ export class DarknessWithLampLightDrawer {
     this.lightMaskContext = this.lightMaskCanvas.getContext("2d");
   }
 
-  draw(ceilingLamps, cameraOffsetX, elapsedTimeInSeconds) {
+  draw(ceilingLamps, cameraOffsetX, elapsedTimeInSeconds, infectionLevel) {
     const maskContext = this.lightMaskContext;
     maskContext.globalCompositeOperation = "source-over";
     maskContext.clearRect(0, 0, logicalScreenWidth, logicalScreenHeight);
-    maskContext.fillStyle = darknessColor;
+    const darknessOpacity = darknessOpacityOnCleanFloor + infectionLevel * extraDarknessOpacityAtFullInfection;
+    maskContext.fillStyle = `rgba(4, 5, 3, ${darknessOpacity})`;
     maskContext.fillRect(0, 0, logicalScreenWidth, logicalScreenHeight);
 
     maskContext.globalCompositeOperation = "destination-out";

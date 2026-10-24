@@ -3,6 +3,7 @@
   Ferramenta de desenvolvimento: mostra uma anomalia específica sem precisar jogar até ela aparecer.
   Exemplo: anomaly-preview.html?anomaly=mold-patch-on-wall
   A câmera centraliza sozinha na anomalia. Para forçar outra posição: &cameraPositionX=1570
+  &floor=3 mostra o andar 3 (o padrão é o 7), útil para ver a infecção.
   Sem o parâmetro anomaly, mostra o corredor normal e lista as anomalias no console.
 -->
 <html lang="en">
@@ -20,11 +21,11 @@
     import { GameSession } from "./src/application/GameSession.js";
     import { CanvasHallwayRenderer } from "./src/infrastructure/CanvasHallwayRenderer.js";
 
-    const previewFloorNumber = 7;
     const defaultCameraPositionX = 1200;
     // O jogador fica um pouco à esquerda para não tapar a anomalia; a câmera segue o jogador.
     const playerDistanceLeftOfFocusInPixels = 180;
     const urlParameters = new URLSearchParams(window.location.search);
+    const previewFloorNumber = Number(urlParameters.get("floor") ?? 7);
     const requestedAnomalyIdentifier = urlParameters.get("anomaly");
 
     const anomalyCatalog = createAnomalyCatalog();
@@ -41,6 +42,7 @@
     const alwaysPickFirstAnomaly = () => 0;
     const floorGenerator = new FloorGenerator(anomaliesToUse, 1, GameConfiguration.startingFloorNumber, alwaysPickFirstAnomaly);
     const gameSession = new GameSession(GameConfiguration, floorGenerator);
+    gameSession.startNewRun();
     gameSession.currentFloorState = floorGenerator.generateFloor(previewFloorNumber);
     gameSession.player.teleportTo(requestedCameraPositionX - playerDistanceLeftOfFocusInPixels);
 

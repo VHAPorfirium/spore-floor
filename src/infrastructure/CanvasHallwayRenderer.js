@@ -16,6 +16,14 @@ import { DarknessWithLampLightDrawer } from "./drawers/DarknessWithLampLightDraw
 import { HudDrawer } from "./drawers/HudDrawer.js";
 import { ScreenOverlayDrawer } from "./drawers/ScreenOverlayDrawer.js";
 import { DebugInformationDrawer } from "./drawers/DebugInformationDrawer.js";
+import { InfectionStainDrawer } from "./drawers/InfectionStainDrawer.js";
+import { MaintenanceNoteDrawer } from "./drawers/MaintenanceNoteDrawer.js";
+import { InfectionTintDrawer } from "./drawers/InfectionTintDrawer.js";
+import { TitleScreenDrawer } from "./drawers/TitleScreenDrawer.js";
+import { SporeDriftDirection } from "../domain/SporeDriftDirection.js";
+
+/** Esporos caindo atrás do título, como num andar já bem infectado. */
+const titleScreenAmbientSpores = Object.freeze({ driftDirection: SporeDriftDirection.fallingDown, numberOfVisibleSpores: 90 });
 
 /**
  * Orquestra o desenho de um frame: decide a ordem das camadas e a câmera.
@@ -42,13 +50,17 @@ export class CanvasHallwayRenderer {
     this.moldPatchDrawer = new MoldPatchDrawer(drawingContext);
     this.ceilingLampFixtureDrawer = new CeilingLampFixtureDrawer(drawingContext);
     this.standingFigureDrawer = new StandingFigureDrawer(drawingContext);
-    this.playerDrawer = new PlayerDrawer(drawingContext);
+    this.playerDrawer = new PlayerDrawer(drawingContext, gameConfiguration.playerStepDurationInSeconds);
     this.followingPresenceDrawer = new FollowingPresenceDrawer(drawingContext);
     this.ambientSporesDrawer = new AmbientSporesDrawer(drawingContext, gameConfiguration.hallwayLengthInPixels);
     this.darknessWithLampLightDrawer = new DarknessWithLampLightDrawer(drawingContext);
     this.hudDrawer = new HudDrawer(drawingContext, gameConfiguration.startingFloorNumber);
     this.screenOverlayDrawer = new ScreenOverlayDrawer(drawingContext);
     this.debugInformationDrawer = new DebugInformationDrawer(drawingContext);
+    this.infectionStainDrawer = new InfectionStainDrawer(drawingContext);
+    this.maintenanceNoteDrawer = new MaintenanceNoteDrawer(drawingContext);
+    this.infectionTintDrawer = new InfectionTintDrawer(drawingContext);
+    this.titleScreenDrawer = new TitleScreenDrawer(drawingContext);
   }
 
   resizeToFitWindow() {
@@ -71,21 +83,22 @@ export class CanvasHallwayRenderer {
     context.fillStyle = colors.backgroundBlack;
     context.fillRect(0, 0, logicalScreenWidth, logicalScreenHeight);
 
-    if (gameSession.currentGamePhase === GamePhase.escapedTheLoop) {
-      this.screenOverlayDrawer.drawEscapeScreen();
+    if (gameSession.currentGamePhase === GamePhase.showingTitleScreen) {
+      this.ambientSporesDrawer.draw(titleScreenAmbientSpores, 0, elapsedTimeInSeconds);
+      this.titleScreenDrawer.draw(elapsedTimeInSeconds);
       return;
     }
 
-    const cameraOffsetX = this.calculateCameraOffsetX(gameSession.player.positionX);
-    const hallwayLayout = gameSession.currentFloorState.hallwayLayout;
+    if (gameSession.currentGamePhase === GamePhase.escapedTheLoop) {
+      this.screenOverlayDrawer.drawEscapeScreen(gameSession.elapsedRunTimeInSeconds, gameSession.numberOfTimesSentBackToStartingFloor);
+      return;
+    }
 
-    context.save();
-    context.translate(-cameraOffsetX, 0);
-    this.drawHallwayWorld(hallwayLayout, gameSession.player, cameraOffsetX, elapsedTimeInSeconds);
-    context.restore();
+    this.drawHallwayScene(gameSession, elapsedTimeInSeconds);
 
-    this.darknessWithLampLightDrawer.draw(hallwayLayout.ceilingLamps, cameraOffsetX, elapsedTimeInSeconds);
-    this.hudDrawer.draw(gameSession);
+    if (gameSession.currentGamePhase === GamePhase.readingMaintenanceNote) {
+      this.screenOverlayDrawer.drawMaintenanceNoteReading(gameSession.currentFloorState.hallwayLayout.maintenanceNote.text);
+    }
 
     if (gameSession.currentGamePhase === GamePhase.changingFloor) {
       this.screenOverlayDrawer.drawFloorTransition(gameSession.floorTransitionProgress, gameSession.floorTransitionMessage);
@@ -96,13 +109,39 @@ export class CanvasHallwayRenderer {
     }
   }
 
+  /** O corredor com câmera, luz, doença e HUD. */
+  drawHallwayScene(gameSession, elapsedTimeInSeconds) {
+    const context = this.drawingContext;
+    const cameraOffsetX = this.calculateCameraOffsetX(gameSession.player.positionX);
+    const hallwayLayout = gameSession.currentFloorState.hallwayLayout;
+
+    context.save();
+    context.translate(-cameraOffsetX, 0);
+    this.drawHallwayWorld(hallwayLayout, gameSession.player, cameraOffsetX, elapsedTimeInSeconds);
+    context.restore();
+
+    this.darknessWithLampLightDrawer.draw(hallwayLayout.ceilingLamps, cameraOffsetX, elapsedTimeInSeconds, hallwayLayout.infectionLevel);
+
+    context.save();
+    context.translate(-cameraOffsetX, 0);
+    this.drawGlowingSigns(hallwayLayout);
+    context.restore();
+
+    this.infectionTintDrawer.draw(hallwayLayout.infectionLevel);
+    this.hudDrawer.draw(gameSession);
+  }
+
   /** Desenha tudo que pertence ao corredor, em coordenadas do mundo, de trás para frente. */
   drawHallwayWorld(hallwayLayout, player, cameraOffsetX, elapsedTimeInSeconds) {
     this.hallwayStructureDrawer.draw(cameraOffsetX);
-    this.elevatorDrawer.draw(hallwayLayout.elevatorIndicatorText);
-    this.stairwellDoorDrawer.draw(hallwayLayout.exitSign.text);
+    this.elevatorDrawer.draw();
+    this.stairwellDoorDrawer.draw();
     hallwayLayout.doors.forEach((door) => this.apartmentDoorDrawer.draw(door));
     hallwayLayout.paintings.forEach((painting) => this.paintingDrawer.draw(painting));
+    hallwayLayout.infectionStains.forEach((infectionStain) => this.infectionStainDrawer.draw(infectionStain));
+    if (hallwayLayout.maintenanceNote !== null) {
+      this.maintenanceNoteDrawer.draw(hallwayLayout.maintenanceNote);
+    }
     hallwayLayout.moldPatches.forEach((moldPatch) => this.moldPatchDrawer.draw(moldPatch));
     hallwayLayout.ceilingLamps.forEach((ceilingLamp) => this.ceilingLampFixtureDrawer.draw(ceilingLamp, elapsedTimeInSeconds));
     hallwayLayout.standingFigures.forEach((standingFigure) => this.standingFigureDrawer.draw(standingFigure, elapsedTimeInSeconds));
@@ -112,6 +151,12 @@ export class CanvasHallwayRenderer {
     }
     this.playerDrawer.draw(player);
     this.ambientSporesDrawer.draw(hallwayLayout.ambientSpores, cameraOffsetX, elapsedTimeInSeconds);
+  }
+
+  /** Painéis e placas iluminados por dentro aparecem mesmo no escuro. */
+  drawGlowingSigns(hallwayLayout) {
+    this.elevatorDrawer.drawGlowingFloorIndicator(hallwayLayout.elevatorIndicatorText, hallwayLayout.elevatorIndicatorColor);
+    this.stairwellDoorDrawer.drawGlowingExitSign(hallwayLayout.exitSign.text);
   }
 
   calculateCameraOffsetX(playerPositionX) {

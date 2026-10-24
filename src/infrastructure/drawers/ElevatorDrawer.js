@@ -1,5 +1,11 @@
 import { hallwayColorPalette as colors } from "../hallwayColorPalette.js";
 import { floorTopY } from "../hallwayRenderingMeasurements.js";
+import { ElevatorIndicatorColor } from "../../domain/ElevatorIndicatorColor.js";
+
+const digitColorByIndicatorColor = Object.freeze({
+  [ElevatorIndicatorColor.amber]: colors.floorIndicatorDigits,
+  [ElevatorIndicatorColor.sporeGreen]: colors.floorIndicatorDigitsSporeGreen,
+});
 
 const elevatorWidth = 140;
 const elevatorHeight = 200;
@@ -16,7 +22,7 @@ export class ElevatorDrawer {
     this.elevatorCenterX = elevatorCenterX;
   }
 
-  draw(elevatorIndicatorText) {
+  draw() {
     const context = this.drawingContext;
     const elevatorLeftX = this.elevatorCenterX - elevatorWidth / 2;
     const elevatorTopY = floorTopY - elevatorHeight;
@@ -32,15 +38,15 @@ export class ElevatorDrawer {
     context.fillStyle = colors.elevatorSteel;
     context.fillRect(elevatorLeftX, elevatorTopY, singleDoorWidth, elevatorHeight);
     context.fillRect(this.elevatorCenterX + gapBetweenElevatorDoors / 2, elevatorTopY, singleDoorWidth, elevatorHeight);
-
-    this.drawFloorIndicator(elevatorTopY - floorIndicatorDistanceAboveElevator, elevatorIndicatorText);
   }
 
-  drawFloorIndicator(floorIndicatorTopY, elevatorIndicatorText) {
+  /** O painel tem luz própria: é desenhado depois da escuridão, para não ser apagado por ela. */
+  drawGlowingFloorIndicator(elevatorIndicatorText, elevatorIndicatorColor) {
+    const floorIndicatorTopY = floorTopY - elevatorHeight - floorIndicatorDistanceAboveElevator;
     const context = this.drawingContext;
     context.fillStyle = colors.floorIndicatorBackground;
     context.fillRect(this.elevatorCenterX - floorIndicatorWidth / 2, floorIndicatorTopY, floorIndicatorWidth, floorIndicatorHeight);
-    context.fillStyle = colors.floorIndicatorDigits;
+    context.fillStyle = digitColorByIndicatorColor[elevatorIndicatorColor];
     context.font = floorIndicatorFont;
     context.textAlign = "center";
     context.textBaseline = "middle";

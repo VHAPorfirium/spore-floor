@@ -30,6 +30,11 @@ export class HudDrawer {
     const availablePlayerDecision = gameSession.findAvailablePlayerDecision();
     if (availablePlayerDecision !== null) {
       this.drawInteractionHint(interactionHintTextByPlayerDecision[availablePlayerDecision]);
+      return;
+    }
+
+    if (gameSession.isPlayerNearMaintenanceNote()) {
+      this.drawInteractionHint("[E] Read the note");
     }
   }
 

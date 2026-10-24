@@ -21,6 +21,10 @@ export class Player {
     this.positionX = Math.min(this.maximumPositionX, Math.max(this.minimumPositionX, nextPositionX));
   }
 
+  stopWalking() {
+    this.isWalking = false;
+  }
+
   teleportTo(positionX) {
     this.positionX = positionX;
     this.isFacingRight = true;
@@ -29,5 +33,10 @@ export class Player {
 
   isNear(targetPositionX, maximumDistanceInPixels) {
     return Math.abs(this.positionX - targetPositionX) <= maximumDistanceInPixels;
+  }
+
+  /** Quantos passos o jogador já deu. Usado para sincronizar o som dos passos com as pernas. */
+  countStepsTaken(stepDurationInSeconds) {
+    return Math.floor(this.walkingAnimationTimeInSeconds / stepDurationInSeconds);
   }
 }
