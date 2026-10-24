@@ -10,7 +10,9 @@ Você sai do elevador no andar 10 e o corredor se repete. Se algo estiver errado
 |---|---|
 | `←` `→` ou `A` `D` | Andar |
 | `E`, `Espaço` ou `Enter` | Usar o elevador / a porta / ler a nota |
+| Clique | Na tela de título e na tela final, vale como `E` (e dá foco ao jogo dentro do iframe do itch.io) |
 | `M` | Liga e desliga o som |
+| `L` | Salva o log de playtest (só com `?playtest`) |
 
 ## Como rodar
 
@@ -40,7 +42,7 @@ Instale a extensão **Live Server**, clique com o botão direito no `index.html`
 
 ## Modo debug
 
-Abra `http://localhost:8080/?debug` para ver no canto da tela qual anomalia está ativa no andar. Útil para testar.
+Abra `http://localhost:8080/?debug` (só na versão de desenvolvimento; na release o debug é desligado) para ver no canto da tela qual anomalia está ativa no andar. Útil para testar.
 
 Para ver uma anomalia específica sem precisar jogar até ela aparecer (a câmera centraliza sozinha nela):
 
@@ -81,6 +83,28 @@ Cada andar tem uma nota presa na parede (`src/domain/maintenanceLogs.js`). Lidas
 | `footsteps-behind-player` | Uma segunda sombra segue o jogador e dá para ouvir passos atrás dele |
 | `infected-figure-at-hallway-end` | Uma figura infectada parada perto da escada |
 | `elevator-chime-out-of-tune` | Só de áudio: o sino de chegada toca desafinado |
+
+## Playtest
+
+Abra o jogo com `?playtest` no fim do endereço. Cada decisão do jogador é registrada (andar, anomalia, escolha, acerto e tempo no andar); a tecla `L` baixa o log em JSON e o resumo aparece no console. Para juntar os logs de várias pessoas:
+
+```bash
+npm run playtest:summary -- playtest-logs
+```
+
+O roteiro completo está em `docs/PLAYTEST.md`.
+
+## Release para o itch.io
+
+```bash
+npm run release
+```
+
+Cria a pasta `release/` só com `index.html` e `src/` (sem o preview de anomalias, testes e scripts), com o modo debug desligado e a versão do `package.json`. Depois, no PowerShell:
+
+```powershell
+Compress-Archive -Path release\* -DestinationPath spore-floor-1.0.0.zip -Force
+```
 
 ## Testes
 
@@ -143,6 +167,6 @@ O teste `every anomaly actually changes the hallway` garante que toda anomalia r
 
 ## Publicando no itch.io
 
-1. Compacte o **conteúdo** da pasta (o `index.html` precisa ficar na raiz do .zip, não dentro de uma subpasta).
+1. Rode `npm run release` e compacte o **conteúdo** da pasta `release/` (o `index.html` precisa ficar na raiz do .zip, não dentro de uma subpasta). O comando do PowerShell acima já faz isso.
 2. No itch.io, crie o projeto como **HTML** e marque *This file will be played in the browser*.
 3. Tamanho da tela sugerido: 960 × 540.

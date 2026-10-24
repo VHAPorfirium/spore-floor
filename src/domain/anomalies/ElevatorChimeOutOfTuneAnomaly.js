@@ -5,7 +5,13 @@ import { ElevatorChimeTone } from "../ElevatorChimeTone.js";
 /** Anomalia só de áudio: o sino de chegada toca desafinado. */
 export class ElevatorChimeOutOfTuneAnomaly extends Anomaly {
   constructor() {
-    super("elevator-chime-out-of-tune", "The elevator arrival chime plays out of tune", GameConfiguration.elevatorPositionX);
+    const requiresSoundToNotice = true;
+    super(
+      "elevator-chime-out-of-tune",
+      "The elevator arrival chime plays out of tune",
+      GameConfiguration.elevatorPositionX,
+      requiresSoundToNotice,
+    );
   }
 
   applyToHallwayLayout(hallwayLayout) {

@@ -83,6 +83,6 @@ export class ScreenOverlayDrawer {
 
     context.font = `15px ${messageFontFamily}`;
     context.fillText("Your fingernails are a little green. You try not to look.", screenCenterX, screenCenterY + 80);
-    context.fillText("Press E to go back inside.", screenCenterX, screenCenterY + 130);
+    context.fillText("Click or press E to go back inside.", screenCenterX, screenCenterY + 130);
   }
 }

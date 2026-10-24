@@ -1,4 +1,5 @@
 import { GamePhase } from "./GamePhase.js";
+import { DecisionLog } from "./DecisionLog.js";
 import { Player } from "../domain/Player.js";
 import { PlayerDecision } from "../domain/PlayerDecision.js";
 import { isPlayerDecisionCorrect, calculateNextFloorNumber, hasPlayerEscaped } from "../domain/LoopRules.js";
@@ -20,6 +21,7 @@ export class GameSession {
       gameConfiguration.stairwellDoorPositionX + 40,
     );
 
+    this.decisionLog = new DecisionLog();
     this.prepareFreshRun();
     this.currentGamePhase = GamePhase.showingTitleScreen;
   }
@@ -40,6 +42,7 @@ export class GameSession {
     this.elapsedRunTimeInSeconds = 0;
     this.numberOfTimesSentBackToStartingFloor = 0;
     this.secondsSpentOnEscapeScreen = 0;
+    this.secondsSpentOnCurrentFloor = 0;
   }
 
   update(playerInputState, elapsedSecondsSinceLastFrame) {
@@ -49,10 +52,12 @@ export class GameSession {
         return;
       case GamePhase.exploringHallway:
         this.elapsedRunTimeInSeconds += elapsedSecondsSinceLastFrame;
+        this.secondsSpentOnCurrentFloor += elapsedSecondsSinceLastFrame;
         this.updateHallwayExploration(playerInputState, elapsedSecondsSinceLastFrame);
         return;
       case GamePhase.readingMaintenanceNote:
         this.elapsedRunTimeInSeconds += elapsedSecondsSinceLastFrame;
+        this.secondsSpentOnCurrentFloor += elapsedSecondsSinceLastFrame;
         this.updateMaintenanceNoteReading(playerInputState);
         return;
       case GamePhase.changingFloor:
@@ -133,6 +138,13 @@ export class GameSession {
     const wasDecisionCorrect = isPlayerDecisionCorrect(this.currentFloorState, playerDecision);
     this.lastPlayerDecision = playerDecision;
     this.wasLastDecisionCorrect = wasDecisionCorrect;
+    this.decisionLog.recordDecision({
+      floorNumber: this.currentFloorState.floorNumber,
+      anomalyIdentifier: this.currentFloorState.activeAnomaly?.anomalyIdentifier ?? null,
+      playerDecision,
+      wasDecisionCorrect,
+      secondsSpentOnFloor: this.secondsSpentOnCurrentFloor,
+    });
     if (!wasDecisionCorrect) {
       this.numberOfTimesSentBackToStartingFloor += 1;
     }
@@ -172,6 +184,7 @@ export class GameSession {
     }
 
     this.currentFloorState = this.floorGenerator.generateFloor(this.pendingNextFloorNumber);
+    this.secondsSpentOnCurrentFloor = 0;
     this.player.teleportTo(this.playerSpawnPositionX);
     this.currentGamePhase = GamePhase.exploringHallway;
   }

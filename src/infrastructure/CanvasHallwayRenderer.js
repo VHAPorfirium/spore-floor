@@ -20,6 +20,7 @@ import { InfectionStainDrawer } from "./drawers/InfectionStainDrawer.js";
 import { MaintenanceNoteDrawer } from "./drawers/MaintenanceNoteDrawer.js";
 import { InfectionTintDrawer } from "./drawers/InfectionTintDrawer.js";
 import { TitleScreenDrawer } from "./drawers/TitleScreenDrawer.js";
+import { StatusIndicatorsDrawer } from "./drawers/StatusIndicatorsDrawer.js";
 import { SporeDriftDirection } from "../domain/SporeDriftDirection.js";
 
 /** Esporos caindo atrás do título, como num andar já bem infectado. */
@@ -61,6 +62,7 @@ export class CanvasHallwayRenderer {
     this.maintenanceNoteDrawer = new MaintenanceNoteDrawer(drawingContext);
     this.infectionTintDrawer = new InfectionTintDrawer(drawingContext);
     this.titleScreenDrawer = new TitleScreenDrawer(drawingContext);
+    this.statusIndicatorsDrawer = new StatusIndicatorsDrawer(drawingContext);
   }
 
   resizeToFitWindow() {
@@ -77,12 +79,21 @@ export class CanvasHallwayRenderer {
     this.pixelsPerLogicalUnit = (displayedWidth * devicePixelRatio) / logicalScreenWidth;
   }
 
-  render(gameSession, elapsedTimeInSeconds) {
+  /**
+   * interfaceStatus: estado que não pertence à partida, mas aparece na tela
+   * ({ isSoundMuted, isPlaytestModeEnabled }).
+   */
+  render(gameSession, elapsedTimeInSeconds, interfaceStatus = {}) {
     const context = this.drawingContext;
     context.setTransform(this.pixelsPerLogicalUnit, 0, 0, this.pixelsPerLogicalUnit, 0, 0);
     context.fillStyle = colors.backgroundBlack;
     context.fillRect(0, 0, logicalScreenWidth, logicalScreenHeight);
 
+    this.drawCurrentScreen(gameSession, elapsedTimeInSeconds);
+    this.statusIndicatorsDrawer.draw(interfaceStatus);
+  }
+
+  drawCurrentScreen(gameSession, elapsedTimeInSeconds) {
     if (gameSession.currentGamePhase === GamePhase.showingTitleScreen) {
       this.ambientSporesDrawer.draw(titleScreenAmbientSpores, 0, elapsedTimeInSeconds);
       this.titleScreenDrawer.draw(elapsedTimeInSeconds);

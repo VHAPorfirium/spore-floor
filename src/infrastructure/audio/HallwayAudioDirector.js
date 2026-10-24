@@ -71,6 +71,11 @@ export class HallwayAudioDirector {
     this.audioContext.resume();
   }
 
+  /** O jogador está ouvindo o jogo agora? Usado para não sortear anomalias que só dá para ouvir. */
+  isSoundAudibleToPlayer() {
+    return this.isAudioReady() && !this.isMuted;
+  }
+
   isAudioReady() {
     return this.audioContext !== null && this.audioContext.state === "running";
   }

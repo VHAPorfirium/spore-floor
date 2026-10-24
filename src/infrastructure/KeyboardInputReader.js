@@ -2,13 +2,15 @@ const keysThatWalkLeft = ["ArrowLeft", "KeyA"];
 const keysThatWalkRight = ["ArrowRight", "KeyD"];
 const keysThatInteract = ["KeyE", "Space", "Enter"];
 const keysThatToggleMute = ["KeyM"];
-const allGameKeys = [...keysThatWalkLeft, ...keysThatWalkRight, ...keysThatInteract, ...keysThatToggleMute];
+const keysThatSavePlaytestLog = ["KeyL"];
+const allGameKeys = [...keysThatWalkLeft, ...keysThatWalkRight, ...keysThatInteract, ...keysThatToggleMute, ...keysThatSavePlaytestLog];
 
 export class KeyboardInputReader {
   constructor(eventTarget) {
     this.currentlyPressedKeyCodes = new Set();
     this.wasInteractKeyPressedSinceLastRead = false;
     this.wasMuteKeyPressedSinceLastRead = false;
+    this.wasSavePlaytestLogKeyPressedSinceLastRead = false;
 
     eventTarget.addEventListener("keydown", (keyboardEvent) => this.handleKeyDown(keyboardEvent));
     eventTarget.addEventListener("keyup", (keyboardEvent) => this.handleKeyUp(keyboardEvent));
@@ -26,6 +28,9 @@ export class KeyboardInputReader {
     }
     if (isFirstPress && keysThatToggleMute.includes(keyboardEvent.code)) {
       this.wasMuteKeyPressedSinceLastRead = true;
+    }
+    if (isFirstPress && keysThatSavePlaytestLog.includes(keyboardEvent.code)) {
+      this.wasSavePlaytestLogKeyPressedSinceLastRead = true;
     }
 
     this.currentlyPressedKeyCodes.add(keyboardEvent.code);
@@ -49,9 +54,11 @@ export class KeyboardInputReader {
       walkingDirection,
       wasInteractKeyJustPressed: this.wasInteractKeyPressedSinceLastRead,
       wasMuteKeyJustPressed: this.wasMuteKeyPressedSinceLastRead,
+      wasSavePlaytestLogKeyJustPressed: this.wasSavePlaytestLogKeyPressedSinceLastRead,
     };
     this.wasInteractKeyPressedSinceLastRead = false;
     this.wasMuteKeyPressedSinceLastRead = false;
+    this.wasSavePlaytestLogKeyPressedSinceLastRead = false;
     return playerInputState;
   }
 }

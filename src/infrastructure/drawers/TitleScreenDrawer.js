@@ -32,7 +32,7 @@ export class TitleScreenDrawer {
     context.globalAlpha = promptOpacity;
     context.fillStyle = colors.interfaceText;
     context.font = `22px ${messageFontFamily}`;
-    context.fillText("Press E to step out of the elevator", screenCenterX, logicalScreenHeight - 80);
+    context.fillText("Click or press E to step out of the elevator", screenCenterX, logicalScreenHeight - 80);
     context.globalAlpha = 1;
   }
 }

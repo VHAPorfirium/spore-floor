@@ -1,12 +1,25 @@
 import { FloorState } from "./FloorState.js";
 import { createNormalHallwayLayout } from "./HallwayLayout.js";
 
+const playerAlwaysHearsSound = () => true;
+
 export class FloorGenerator {
-  constructor(anomalyCatalog, chanceOfFloorHavingAnomaly, startingFloorNumber, generateRandomNumberBetweenZeroAndOne) {
+  /**
+   * canPlayerHearSound: função que diz se o jogador está com som agora.
+   * Sem som, anomalias que só dá para ouvir não são sorteadas.
+   */
+  constructor(
+    anomalyCatalog,
+    chanceOfFloorHavingAnomaly,
+    startingFloorNumber,
+    generateRandomNumberBetweenZeroAndOne,
+    canPlayerHearSound = playerAlwaysHearsSound,
+  ) {
     this.anomalyCatalog = anomalyCatalog;
     this.chanceOfFloorHavingAnomaly = chanceOfFloorHavingAnomaly;
     this.startingFloorNumber = startingFloorNumber;
     this.generateRandomNumberBetweenZeroAndOne = generateRandomNumberBetweenZeroAndOne;
+    this.canPlayerHearSound = canPlayerHearSound;
     this.previouslyChosenAnomaly = null;
   }
 
@@ -27,7 +40,8 @@ export class FloorGenerator {
       return null;
     }
 
-    const hasNoAnomalyToChooseFrom = this.anomalyCatalog.length === 0;
+    const anomaliesThatCanBeChosen = this.listAnomaliesThatCanBeChosenNow();
+    const hasNoAnomalyToChooseFrom = anomaliesThatCanBeChosen.length === 0;
     if (hasNoAnomalyToChooseFrom) {
       return null;
     }
@@ -37,19 +51,22 @@ export class FloorGenerator {
       return null;
     }
 
-    const anomaliesThatCanBeChosen = this.listAnomaliesThatCanBeChosenNow();
     const randomAnomalyIndex = Math.floor(this.generateRandomNumberBetweenZeroAndOne() * anomaliesThatCanBeChosen.length);
     const chosenAnomaly = anomaliesThatCanBeChosen[randomAnomalyIndex];
     this.previouslyChosenAnomaly = chosenAnomaly;
     return chosenAnomaly;
   }
 
-  /** Evita a mesma anomalia duas vezes seguidas, para o jogador não sentir que o jogo travou. */
+  /**
+   * Só anomalias que o jogador consegue perceber agora,
+   * e sem repetir a do andar anterior (a não ser que ela seja a única possível).
+   */
   listAnomaliesThatCanBeChosenNow() {
-    const hasOnlyOneAnomaly = this.anomalyCatalog.length <= 1;
-    if (hasOnlyOneAnomaly) {
-      return this.anomalyCatalog;
-    }
-    return this.anomalyCatalog.filter((anomaly) => anomaly !== this.previouslyChosenAnomaly);
+    const isPlayerHearingSound = this.canPlayerHearSound();
+    const noticeableAnomalies = this.anomalyCatalog.filter(
+      (anomaly) => isPlayerHearingSound || !anomaly.requiresSoundToNotice,
+    );
+    const anomaliesWithoutRepetition = noticeableAnomalies.filter((anomaly) => anomaly !== this.previouslyChosenAnomaly);
+    return anomaliesWithoutRepetition.length > 0 ? anomaliesWithoutRepetition : noticeableAnomalies;
   }
 }
