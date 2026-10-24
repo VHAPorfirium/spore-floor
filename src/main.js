@@ -31,6 +31,7 @@ async function startGame() {
   // O navegador só deixa tocar som depois de uma interação do jogador.
   window.addEventListener("keydown", () => hallwayAudioDirector.unlockAudio());
   window.addEventListener("pointerdown", () => hallwayAudioDirector.unlockAudio());
+  document.addEventListener("visibilitychange", () => hallwayAudioDirector.pauseWhilePageIsHidden(document.hidden));
 
   let previousFrameTimestampInMilliseconds = performance.now();
 

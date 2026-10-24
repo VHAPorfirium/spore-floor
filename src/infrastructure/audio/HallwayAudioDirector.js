@@ -59,6 +59,18 @@ export class HallwayAudioDirector {
     this.infectionDrone = this.soundEffects.createInfectionDrone();
   }
 
+  /** Sem isto, o zumbido e o ruído continuam tocando com a aba escondida (o loop do jogo para, o áudio não). */
+  pauseWhilePageIsHidden(isPageHidden) {
+    if (this.audioContext === null) {
+      return;
+    }
+    if (isPageHidden) {
+      this.audioContext.suspend();
+      return;
+    }
+    this.audioContext.resume();
+  }
+
   isAudioReady() {
     return this.audioContext !== null && this.audioContext.state === "running";
   }

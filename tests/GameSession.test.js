@@ -104,6 +104,36 @@ test("after escaping, the interact key returns to the title screen", () => {
     goThroughStairwellDoor(gameSession);
     finishFloorTransition(gameSession);
   }
+  gameSession.update(noInput, 2);
+  gameSession.update(pressInteract, oneFrameInSeconds);
+  assert.equal(gameSession.currentGamePhase, GamePhase.showingTitleScreen);
+});
+
+test("walking into a wall does not count as walking", () => {
+  const gameSession = createSessionInsideHallway(createFloorGeneratorWithOnlyNormalFloors());
+  const walkLeft = { walkingDirection: -1, wasInteractKeyJustPressed: false };
+  for (let frame = 0; frame < 120; frame++) {
+    gameSession.update(walkLeft, oneFrameInSeconds);
+  }
+  const stepsTakenWhenReachingWall = gameSession.player.countStepsTaken(GameConfiguration.playerStepDurationInSeconds);
+
+  for (let frame = 0; frame < 120; frame++) {
+    gameSession.update(walkLeft, oneFrameInSeconds);
+  }
+  assert.equal(gameSession.player.isWalking, false);
+  assert.equal(gameSession.player.countStepsTaken(GameConfiguration.playerStepDurationInSeconds), stepsTakenWhenReachingWall);
+});
+
+test("the escape screen cannot be skipped by mashing the interact key", () => {
+  const gameSession = createSessionInsideHallway(createFloorGeneratorWithOnlyNormalFloors());
+  for (let decisionNumber = 0; decisionNumber < 10; decisionNumber++) {
+    goThroughStairwellDoor(gameSession);
+    finishFloorTransition(gameSession);
+  }
+  gameSession.update(pressInteract, oneFrameInSeconds);
+  assert.equal(gameSession.currentGamePhase, GamePhase.escapedTheLoop);
+
+  gameSession.update(noInput, 2);
   gameSession.update(pressInteract, oneFrameInSeconds);
   assert.equal(gameSession.currentGamePhase, GamePhase.showingTitleScreen);
 });

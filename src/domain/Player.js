@@ -9,16 +9,24 @@ export class Player {
   }
 
   walk(walkingDirection, walkingSpeedInPixelsPerSecond, elapsedSecondsSinceLastFrame) {
-    this.isWalking = walkingDirection !== 0;
-    if (!this.isWalking) {
+    const isTryingToWalk = walkingDirection !== 0;
+    if (!isTryingToWalk) {
+      this.isWalking = false;
       return;
     }
 
     this.isFacingRight = walkingDirection > 0;
-    this.walkingAnimationTimeInSeconds += elapsedSecondsSinceLastFrame;
+    const desiredPositionX = this.positionX + walkingDirection * walkingSpeedInPixelsPerSecond * elapsedSecondsSinceLastFrame;
+    const nextPositionX = Math.min(this.maximumPositionX, Math.max(this.minimumPositionX, desiredPositionX));
 
-    const nextPositionX = this.positionX + walkingDirection * walkingSpeedInPixelsPerSecond * elapsedSecondsSinceLastFrame;
-    this.positionX = Math.min(this.maximumPositionX, Math.max(this.minimumPositionX, nextPositionX));
+    // Empurrando a parede o jogador vira para o lado, mas não anda (nem mexe as pernas, nem faz som de passo).
+    this.isWalking = nextPositionX !== this.positionX;
+    if (!this.isWalking) {
+      return;
+    }
+
+    this.walkingAnimationTimeInSeconds += elapsedSecondsSinceLastFrame;
+    this.positionX = nextPositionX;
   }
 
   stopWalking() {

@@ -4,6 +4,8 @@ import { PlayerDecision } from "../domain/PlayerDecision.js";
 import { isPlayerDecisionCorrect, calculateNextFloorNumber, hasPlayerEscaped } from "../domain/LoopRules.js";
 
 const distanceBetweenElevatorAndPlayerSpawnInPixels = 110;
+/** Tempo mínimo na tela final, para o jogador não pular o resultado apertando E sem parar. */
+const minimumSecondsOnEscapeScreen = 1.5;
 
 /** Orquestra uma partida: tela de título, corredor, notas, troca de andar e fuga. */
 export class GameSession {
@@ -37,6 +39,7 @@ export class GameSession {
     this.wasLastDecisionCorrect = null;
     this.elapsedRunTimeInSeconds = 0;
     this.numberOfTimesSentBackToStartingFloor = 0;
+    this.secondsSpentOnEscapeScreen = 0;
   }
 
   update(playerInputState, elapsedSecondsSinceLastFrame) {
@@ -57,6 +60,7 @@ export class GameSession {
         this.updateFloorTransition(elapsedSecondsSinceLastFrame);
         return;
       case GamePhase.escapedTheLoop:
+        this.secondsSpentOnEscapeScreen += elapsedSecondsSinceLastFrame;
         this.updateEscapeScreen(playerInputState);
         return;
     }
@@ -98,7 +102,8 @@ export class GameSession {
   }
 
   updateEscapeScreen(playerInputState) {
-    if (playerInputState.wasInteractKeyJustPressed) {
+    const canLeaveEscapeScreen = this.secondsSpentOnEscapeScreen >= minimumSecondsOnEscapeScreen;
+    if (canLeaveEscapeScreen && playerInputState.wasInteractKeyJustPressed) {
       this.currentGamePhase = GamePhase.showingTitleScreen;
     }
   }
@@ -161,6 +166,7 @@ export class GameSession {
     }
 
     if (hasPlayerEscaped(this.pendingNextFloorNumber)) {
+      this.secondsSpentOnEscapeScreen = 0;
       this.currentGamePhase = GamePhase.escapedTheLoop;
       return;
     }

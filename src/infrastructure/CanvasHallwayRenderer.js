@@ -121,13 +121,15 @@ export class CanvasHallwayRenderer {
     context.restore();
 
     this.darknessWithLampLightDrawer.draw(hallwayLayout.ceilingLamps, cameraOffsetX, elapsedTimeInSeconds, hallwayLayout.infectionLevel);
+    this.infectionTintDrawer.draw(hallwayLayout.infectionLevel);
 
+    // Depois do tingimento verde: senão o laranja do painel fica esverdeado nos andares mais doentes
+    // e o jogador pode confundir com a anomalia do painel verde.
     context.save();
     context.translate(-cameraOffsetX, 0);
     this.drawGlowingSigns(hallwayLayout);
     context.restore();
 
-    this.infectionTintDrawer.draw(hallwayLayout.infectionLevel);
     this.hudDrawer.draw(gameSession);
   }
 
